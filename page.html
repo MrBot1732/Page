@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inventario - Botica y Salud</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter para el cuerpo y Montserrat para el Dashboard -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* Regla para asegurar que los elementos con 'hidden' estén realmente ocultos */
+        .hidden {
+            display: none !important;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Nuevo fondo azul verdoso degradado */
+            background: linear-gradient(to bottom right, #e0f2f7, #b2ebf2);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .container {
+            /* El contenedor principal ahora será la tarjeta grande de la aplicación */
+            background-color: #ffffff; /* Fondo blanco limpio */
+            border-radius: 1rem; /* Esquinas redondeadas */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Sombra suave para la tarjeta principal */
+            padding: 2rem; /* Relleno general para la tarjeta principal */
+            max-width: 95vw; /* Ocupar casi todo el ancho de la vista */
+            width: 100%; /* Permite que se adapte al ancho disponible */
+            min-height: 95vh; /* Ocupar la mayoría de la altura de la vista */
+            display: flex;
+            flex-direction: column; /* Esto es clave para que las secciones se apilen */
+            gap: 1.5rem;
+            box-sizing: border-box; /* Incluir padding y borde en el tamaño total */
+        }
+        .section-card {
+            /* Estilo base para las secciones internas (operaciones, login) */
+            background-color: #eff6ff;
+            border-radius: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+        }
+        /* Estilos específicos para la sección de login (más grande y vistosa) */
+        #login-section {
+            background-color: #fed7aa; /* Un naranja más perceptible (Tailwind orange-200) */
+            border: 1px solid #fb923c; /* Borde sutil naranja (Tailwind orange-400) */
+            box-shadow: 0 12px 35px rgba(251, 146, 60, 0.5); /* Sombra más pronunciada y más dispersa con tono naranja */
+            padding: 4.5rem; /* Mayor padding para un look más "grande" */
+            max-width: 650px; /* Aumentado el ancho para la tarjeta de login */
+            margin: auto; /* Centrar la tarjeta de login */
+        }
+        /* Estilos específicos para el Dashboard (fondo grande y color) */
+        #dashboard-section {
+            background-color: #33ffe6; /* Color de fondo actualizado */
+            border-radius: 1rem; /* Mantiene esquinas redondeadas */
+            box-shadow: none; /* Sin sombra (la tiene el contenedor principal ahora) */
+            border: none; /* Sin borde */
+            padding-top: 1.5rem; /* Ajustado para mover el contenido más arriba */
+            padding-left: 6rem;
+            padding-right: 6rem;
+            padding-bottom: 6rem;
+            width: 100%; /* Ocupar el 100% del contenedor padre (.container) */
+            height: 100%; /* Ocupar el 100% del contenedor padre (.container) */
+            font-family: 'Montserrat', sans-serif;
+            display: flex; /* Se usa display flex cuando está visible */
+            flex-direction: column;
+            justify-content: space-between; /* Distribuye el espacio entre los elementos */
+            align-items: center;
+            flex-grow: 1; /* Permite que el dashboard crezca para llenar el espacio */
+            
+            /* Anteriormente aquí estaba la imagen de fondo */
+            /* background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('https://placehold.co/1200x800/A0E7E6/000000?text=Fondo+de+Botica'); */
+            /* background-size: cover; */
+            /* background-position: center; */
+            /* background-repeat: no-repeat; */
+            color: #ffffff; /* Color de texto predeterminado para el dashboard */
+        }
+        /* Ajuste de grid para los botones del dashboard */
+        #dashboard-section .grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Botones más grandes y responsivos */
+            gap: 1.5rem; /* Espacio entre botones */
+            width: 100%; /* Asegurar que la cuadrícula ocupe el ancho disponible */
+            max-width: 900px; /* Limitar el ancho de los botones para que no se extiendan demasiado */
+            flex-grow: 1; /* Permite que la cuadrícula de botones crezca y empuje el botón de logout */
+            display: grid; /* Mantener grid display para los botones */
+            align-items: center; /* Centrar los botones dentro de la cuadrícula verticalmente */
+        }
+        .form-input {
+            @apply p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 w-full text-gray-700;
+            outline: none; /* Eliminar el contorno al enfocar para mejor estética */
+        }
+        .btn-primary {
+            @apply bg-blue-600 text-white font-semibold py-4 px-6 rounded-lg shadow-md;
+            background: linear-gradient(to right, #4f46e5, #6366f1); /* Degradado azul */
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4); /* Sombra más vistosa */
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(to right, #6366f1, #818cf8); /* Degradado en hover */
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.6);
+            transform: translateY(-2px); /* Pequeño levantamiento */
+        }
+        .btn-secondary {
+            @apply bg-gray-200 text-white font-semibold py-4 px-6 rounded-lg; /* Tailwind classes for fallback */
+            /* Degradado Púrpura/Violeta para secundario */
+            background: linear-gradient(to right, #8b5cf6, #a78bfa); /* Tailwind violet-500 to violet-400 */
+            color: #ffffff; /* Asegurar texto blanco para contraste */
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.4); /* Sombra a juego */
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(to right, #a78bfa, #c4b5fd); /* Degradado en hover más claro */
+            box-shadow: 0 6px 15px rgba(139, 92, 246, 0.6);
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            @apply bg-red-600 text-white font-semibold py-4 px-6 rounded-lg shadow-md;
+            background: linear-gradient(to right, #dc2626, #ef4444); /* Degradado rojo */
+            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-danger:hover {
+            background: linear-gradient(to right, #ef4444, #f87171); /* Degradado en hover */
+            box-shadow: 0 6px 15px rgba(220, 38, 38, 0.6);
+            transform: translateY(-2px);
+        }
+        /* Estilo específico para el botón de Cerrar Sesión */
+        #logout-btn {
+            background: linear-gradient(to right, #f97316, #fb923c); /* Degradado naranja vibrante */
+            box-shadow: 0 4px 10px rgba(249, 115, 22, 0.4);
+            color: #ffffff;
+            margin-top: 2rem; /* Separación explícita del botón de logout de los botones de arriba */
+        }
+        #logout-btn:hover {
+            background: linear-gradient(to right, #fb923c, #fdba74); /* Degradado naranja más claro en hover */
+            box-shadow: 0 6px 15px rgba(249, 115, 22, 0.6);
+        }
+
+        .message-box {
+            @apply p-4 rounded-lg text-base font-medium; /* Aumento ligero del tamaño del texto de mensajes */
+            background-color: #e0f2f7; /* Azul claro para información */
+            color: #01579b; /* Azul oscuro para información */
+            border: 1px solid #b3e5fc;
+        }
+        .message-box.error {
+            background-color: #ffebee; /* Rojo claro para error */
+            color: #c62828; /* Rojo oscuro para error */
+            border: 1px solid #ef9a9a;
+        }
+        .table-header {
+            @apply bg-blue-100 text-blue-800 uppercase text-sm font-semibold p-3;
+        }
+        .table-cell {
+            @apply p-3 border-b border-gray-200 text-gray-700;
+        }
+        /* Clases de alineación de texto específicas */
+        .text-left-align { text-align: left; }
+        .text-right-align { text-align: right; }
+
+        /* Estilos para el grupo de encabezado del dashboard */
+        .dashboard-header-group {
+            @apply text-center mb-8; /* Conserva el margen inferior para separar del resto del dashboard */
+        }
+        .dashboard-header-group .section-title {
+            /* Títulos más grandes y vistosos para el dashboard */
+            @apply text-6xl font-extrabold text-white mb-4; /* Margen inferior para separar del mensaje de bienvenida */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Sombra de texto */
+        }
+        /* El párrafo de bienvenida ahora tiene el subrayado y su propia separación */
+        .dashboard-header-group p.dashboard-welcome-message {
+            /* Aumento del tamaño del texto del mensaje de bienvenida y color */
+            @apply text-center text-white text-4xl mb-32; /* Aumentado mb-32 para separar de los botones */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Sombra de texto */
+            text-decoration: underline; /* Añade el subrayado */
+            text-decoration-color: #292724; /* Color del subrayado */
+            text-underline-offset: 0.5rem; /* Separación entre el texto y el subrayado */
+            padding-bottom: 1rem; /* Espacio entre el texto y la línea */
+        }
+
+        /* Estilo específico para el texto del botón de login */
+        .login-button-text {
+            font-family: 'Montserrat', sans-serif; /* Usar Montserrat para el botón */
+            font-weight: 900; /* Extra bold */
+            font-size: 1.25rem; /* text-xl */
+            line-height: 1.75rem;
+            padding-top: 0.8rem;
+            padding-bottom: 0.8rem;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem; /* Menor padding para móviles */
+                max-width: 100vw;
+                min-height: 98vh; /* Ocupar casi toda la altura en móvil */
+            }
+            .section-card {
+                padding: 1rem;
+            }
+            #login-section {
+                padding: 2rem;
+                max-width: 95%;
+            }
+            #dashboard-section {
+                padding: 2rem 1rem; /* Ajuste del padding para móviles */
+                width: 100%;
+                height: 100%;
+                border: none;
+                box-shadow: none;
+            }
+            #dashboard-section .grid {
+                grid-template-columns: 1fr; /* Apilar botones en pantallas pequeñas */
+            }
+            .form-input {
+                padding: 0.75rem;
+            }
+            .btn-primary, .btn-secondary, .btn-danger {
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+            .dashboard-header-group .section-title {
+                font-size: 2.25rem; /* Ajustado para móvil */
+                margin-bottom: 1.5rem; /* Ajustado para móvil */
+            }
+            .dashboard-header-group p.dashboard-welcome-message {
+                font-size: 1.25rem; /* Ajustado para móvil */
+                margin-bottom: 3rem; /* Ajuste del margen para móvil */
+                padding-bottom: 0.5rem; /* Ajuste del padding para móvil */
+            }
+            .message-box {
+                font-size: 0.875rem;
+            }
+            .table-header, .table-cell {
+                padding: 0.75rem;
+                font-size: 0.875rem;
+            }
+            .login-button-text {
+                font-size: 1rem;
+                padding-top: 0.6rem;
+                padding-bottom: 0.6rem;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+    <div id="app" class="container">
+        <!-- Login Section (initially visible) -->
+        <div id="login-section" class="section-card w-full mx-auto">
+            <h2 class="text-3xl font-bold text-center text-blue-700 mb-6">Iniciar Sesión</h2>
+            <div id="login-message" class="message-box hidden mb-4"></div>
+            <div class="mb-4">
+                <label for="username" class="block text-gray-700 text-base font-semibold mb-2">Usuario:</label>
+                <input type="text" id="username" class="form-input" value="">
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-gray-700 text-base font-semibold mb-2">Contraseña:</label>
+                <input type="password" id="password" class="form-input" value="">
+            </div>
+            <button id="login-btn" class="btn-primary w-full login-button-text">Entrar</button>
+            <p class="text-sm text-gray-500 text-center mt-4">
+                Prueba con: <span class="font-semibold">admin/admin123</span> o <span class="font-semibold">farmaceutico1/passfarm</span>
+            </p>
+        </div>
+
+        <!-- Main Dashboard Section (initially hidden) -->
+        <div id="dashboard-section" class="hidden">
+            <!-- Header Group for Dashboard -->
+            <div class="dashboard-header-group">
+                <h2 class="section-title">Panel de Control de Inventario</h2>
+                <!-- Mensaje de bienvenida que muestra solo el rol como en la imagen -->
+                <p class="text-lg dashboard-welcome-message">Bienvenido, <span id="logged-in-role-display" class="font-bold"></span></p>
+                 <p class="text-sm text-white-500 text-center mt-4">
+                    ID de Usuario: <span id="user-id-display" class="font-semibold"></span>
+                </p>
+            </div>
+
+            <div class="grid">
+                <!-- Admin-specific actions -->
+                <button id="show-register-medicine" class="btn-primary py-5" data-role="Administrador">Registrar Nuevo Medicamento</button>
+                <button id="show-update-medicine" class="btn-primary py-5" data-role="Administrador">Actualizar Medicamento</button>
+                <button id="show-delete-medicine" class="btn-danger py-5" data-role="Administrador">Eliminar Medicamento</button>
+                <button id="show-purchase-medicine" class="btn-primary py-5" data-role="Administrador">Registrar Compra</button>
+                <button id="show-low-stock-report" class="btn-secondary py-5" data-role="Administrador">Reporte Bajo Stock</button>
+                <button id="show-expiring-report" class="btn-secondary py-5" data-role="Administrador">Reporte por Vencer</button>
+
+                <!-- Common actions for both roles -->
+                <button id="show-sell-medicine" class="btn-primary py-5">Registrar Venta</button>
+                <button id="show-adjust-stock" class="btn-secondary py-5">Ajustar Stock</button>
+                <button id="show-check-stock" class="btn-secondary py-5">Consultar Stock</button>
+                <button id="show-all-medicines" class="btn-secondary py-5 lg:col-span-full">Ver Todos los Medicamentos</button>
+            </div>
+            
+            <!-- Botón de Cerrar Sesión separado y con margen superior -->
+            <button id="logout-btn" class="w-full btn-secondary">Cerrar Sesión</button>
+        </div>
+
+        <!-- Operation Sections (initially hidden) -->
+        <div id="operation-sections" class="hidden w-full section-card">
+            <button id="back-to-dashboard-btn" class="btn-secondary mb-6 px-4 py-2 text-base">&larr; Volver al Panel</button>
+
+            <!-- Section: Register New Medicine -->
+            <div id="register-medicine-section" class="hidden">
+                <h3 class="section-title">Registrar Nuevo Medicamento</h3>
+                <div id="register-medicine-message" class="message-box hidden mb-4"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div><label class="block text-gray-700 text-base font-semibold mb-2">Nombre:</label><input type="text" id="reg-name" class="form-input"></div>
+                    <div><label class="block text-gray-700 text-base font-semibold mb-2">Categoría:</label><input type="text" id="reg-category" class="form-input"></div>
+                    <div><label class="block text-gray-700 text-base font-semibold mb-2">Precio:</label><input type="number" id="reg-price" class="form-input" step="0.01"></div>
+                    <div><label class="block text-gray-700 text-base font-semibold mb-2">Stock Inicial:</label><input type="number" id="reg-stock" class="form-input"></div>
+                    <div class="md:col-span-2"><label class="block text-gray-700 text-base font-semibold mb-2">Fecha de Vencimiento (AAAA-MM-DD):</label><input type="date" id="reg-expiry" class="form-input"></div>
+                    <div class="md:col-span-2"><label class="block text-gray-700 text-base font-semibold mb-2">Descripción:</label><textarea id="reg-description" class="form-input" rows="3"></textarea></div>
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 text-base font-semibold mb-2">Proveedor:</label>
+                        <select id="reg-supplier" class="form-input"></select>
+                    </div>
+                </div>
+                <button id="submit-register-medicine" class="btn-primary w-full">Registrar Medicamento</button>
+            </div>
+
+            <!-- Section: Update Medicine -->
+            <div id="update-medicine-section" class="hidden">
+                <h3 class="section-title">Actualizar Información de Medicamento</h3>
+                <div id="update-medicine-message" class="message-box hidden mb-4"></div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">ID del Medicamento:</label>
+                    <input type="number" id="upd-id" class="form-input">
+                </div>
+                <button id="search-medicine-for-update" class="btn-secondary w-full mb-4">Buscar Medicamento</button>
+                <div id="update-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 hidden">
+                    <div><label class="block text-gray-700 text-base font-semibold mb-2">Nombre:</label><input type="text" id="upd-name" class="form-input"></div>
+                    <div><label class="block text-gray-700 text-base font-semibold mb-2">Categoría:</label><input type="text" id="upd-category" class="form-input"></div>
+                    <div><label class="block text-gray-700 text-base font-semibold mb-2">Precio:</label><input type="number" id="upd-price" class="form-input" step="0.01"></div>
+                    <div class="md:col-span-2"><label class="block text-gray-700 text-base font-semibold mb-2">Fecha de Vencimiento (AAAA-MM-DD):</label><input type="date" id="upd-expiry" class="form-input"></div>
+                    <div class="md:col-span-2"><label class="block text-gray-700 text-base font-semibold mb-2">Descripción:</label><textarea id="upd-description" class="form-input" rows="3"></textarea></div>
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 text-base font-semibold mb-2">Proveedor:</label>
+                        <select id="upd-supplier" class="form-input"></select>
+                    </div>
+                </div>
+                <button id="submit-update-medicine" class="btn-primary w-full hidden">Actualizar Medicamento</button>
+            </div>
+
+            <!-- Section: Delete Medicine -->
+            <div id="delete-medicine-section" class="hidden">
+                <h3 class="section-title">Eliminar Medicamento</h3>
+                <div id="delete-medicine-message" class="message-box hidden mb-4"></div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">ID del Medicamento:</label>
+                    <input type="number" id="del-id" class="form-input">
+                </div>
+                <button id="submit-delete-medicine" class="btn-danger w-full">Eliminar Medicamento</button>
+                <p class="text-base text-gray-500 mt-4 text-center">La eliminación es solo lógica en esta simulación (stock a 0).</p>
+            </div>
+
+            <!-- Section: Purchase Medicine -->
+            <div id="purchase-medicine-section" class="hidden">
+                <h3 class="section-title">Registrar Compra de Medicamentos</h3>
+                <div id="purchase-medicine-message" class="message-box hidden mb-4"></div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">ID del Medicamento:</label><input type="number" id="purchase-id" class="form-input"></div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">Cantidad a Comprar:</label><input type="number" id="purchase-quantity" class="form-input"></div>
+                <button id="submit-purchase-medicine" class="btn-primary w-full">Registrar Compra</button>
+            </div>
+
+            <!-- Section: Sell Medicine -->
+            <div id="sell-medicine-section" class="hidden">
+                <h3 class="section-title">Registrar Venta de Medicamentos</h3>
+                <div id="sell-medicine-message" class="message-box hidden mb-4"></div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">ID del Medicamento:</label><input type="number" id="sell-id" class="form-input"></div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">Cantidad a Vender:</label><input type="number" id="sell-quantity" class="form-input"></div>
+                <button id="submit-sell-medicine" class="btn-primary w-full">Registrar Venta</button>
+            </div>
+
+            <!-- Section: Adjust Stock -->
+            <div id="adjust-stock-section" class="hidden">
+                <h3 class="section-title">Ajustar Stock por Vencimiento/Pérdida</h3>
+                <div id="adjust-stock-message" class="message-box hidden mb-4"></div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">ID del Medicamento:</label><input type="number" id="adjust-id" class="form-input"></div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">Cantidad a Ajustar (positivo para agregar, negativo para quitar):</label><input type="number" id="adjust-quantity" class="form-input"></div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">Observaciones (Ej: "Vencido", "Pérdida", "Inventario físico"):</label><input type="text" id="adjust-observations" class="form-input"></div>
+                <button id="submit-adjust-stock" class="btn-primary w-full">Realizar Ajuste</button>
+            </div>
+
+            <!-- Section: Check Stock -->
+            <div id="check-stock-section" class="hidden">
+                <h3 class="section-title">Consultar Stock de Medicamento</h3>
+                <div id="check-stock-message" class="message-box hidden mb-4"></div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">ID del Medicamento:</label><input type="number" id="check-id" class="form-input"></div>
+                <button id="submit-check-stock" class="btn-secondary w-full">Consultar Stock</button>
+                <div id="check-stock-result" class="message-box mt-4 hidden"></div>
+            </div>
+
+            <!-- Section: All Medicines (Report) -->
+            <div id="all-medicines-section" class="hidden">
+                <h3 class="section-title">Todos los Medicamentos en Inventario</h3>
+                <div id="all-medicines-message" class="message-box hidden mb-4"></div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                        <thead>
+                            <tr>
+                                <th class="table-header text-left-align">ID</th>
+                                <th class="table-header text-left-align">Nombre</th>
+                                <th class="table-header text-left-align">Categoría</th>
+                                <th class="table-header text-right-align">Precio</th>
+                                <th class="table-header text-right-align">Stock</th>
+                                <th class="table-header text-left-align">Vencimiento</th>
+                                <th class="table-header text-left-align">Proveedor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-medicines-tbody">
+                            <!-- Data will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section: Low Stock Report -->
+            <div id="low-stock-report-section" class="hidden">
+                <h3 class="section-title">Reporte de Medicamentos Bajo Stock</h3>
+                <div id="low-stock-message" class="message-box hidden mb-4"></div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">Umbral de Stock Bajo:</label><input type="number" id="low-stock-threshold" class="form-input" value="20"></div>
+                <button id="generate-low-stock-report" class="btn-secondary w-full mb-4">Generar Reporte</button>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                        <thead>
+                            <tr>
+                                <th class="table-header text-left-align">ID</th>
+                                <th class="table-header text-left-align">Nombre</th>
+                                <th class="table-header text-left-align">Categoría</th>
+                                <th class="table-header text-right-align">Stock</th>
+                                <th class="table-header text-left-align">Vencimiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="low-stock-tbody">
+                            <!-- Data will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section: Expiring Report -->
+            <div id="expiring-report-section" class="hidden">
+                <h3 class="section-title">Reporte de Medicamentos por Vencer</h3>
+                <div id="expiring-message" class="message-box hidden mb-4"></div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-base font-semibold mb-2">Días de Anticipación:</label><input type="number" id="expiring-days" class="form-input" value="90"></div>
+                <button id="generate-expiring-report" class="btn-secondary w-full mb-4">Generar Reporte</button>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                        <thead>
+                            <tr>
+                                <th class="table-header text-left-align">ID</th>
+                                <th class="table-header text-left-align">Nombre</th>
+                                <th class="table-header text-left-align">Categoría</th>
+                                <th class="table-header text-right-align">Stock</th>
+                                <th class="table-header text-left-align">Vencimiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expiring-tbody">
+                            <!-- Data will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase variables
+        let app;
+        let db;
+        let auth;
+        let userId;
+
+        // Firebase Configuration (provided by the environment)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        // In-memory mock data (will be used to initially populate Firestore)
+        let medicamentos = [];
+        let proveedores = [];
+        let usuarios = [
+            { id: 1, username: 'admin', password: 'admin123', rol: 'Administrador' },
+            { id: 2, username: 'farmaceutico1', password: 'passfarm', rol: 'Farmaceutico' },
+            { id: 3, username: 'farmaceutico2', password: 'passfarm2', rol: 'Farmaceutico' },
+        ];
+        let transacciones = []; // Local array to hold transactions for display, but will be saved to Firestore
+        let nextMedicamentoId = 1; // Will be determined by Firestore data
+
+        let loggedInUser = null; // Store the authenticated user object from Firebase
+        let userRole = null; // Store the role determined by our mock users
+
+        // --- Firebase Initialization and Auth ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Initialize Firebase
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Authenticate anonymously or with custom token
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Listen for authentication state changes
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        document.getElementById('user-id-display').textContent = userId;
+                        console.log("Firebase Auth Ready. User ID:", userId);
+                        await initializeFirestoreData(); // Ensure data exists in Firestore
+                        setupEventListeners(); // Set up event listeners after Firebase is ready
+                        showSection('login-section'); // Start at login
+                    } else {
+                        userId = null;
+                        document.getElementById('user-id-display').textContent = 'No autenticado';
+                        console.log("Firebase: User logged out or not authenticated.");
+                        // If not authenticated, ensure the login section is shown and clear app state
+                        hideAllSections();
+                        showSection('login-section');
+                        loggedInUser = null;
+                        userRole = null;
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error initializing Firebase or authentication:", error);
+                showMessage('login-message', 'Error al inicializar la aplicación. Verifique la consola.', true);
+            }
+        });
+
+        // --- Data Initialization (Firestore) ---
+        async function initializeFirestoreData() {
+            try {
+                // Check and populate Medicamentos
+                const medicamentosColRef = collection(db, `artifacts/${appId}/public/data/medicamentos`);
+                const medicamentosSnapshot = await getDocs(medicamentosColRef);
+                if (medicamentosSnapshot.empty) {
+                    console.log("Medicamentos collection is empty. Populating with initial data...");
+                    const initialMedicamentos = [
+                        { id: 1, nombre: 'Paracetamol 500mg', descripcion: 'Analgésico y antipirético.', categoria: 'Analgésico', precio: 5.50, stock: 100, fechaVencimiento: '2026-12-31', proveedorId: 1 },
+                        { id: 2, nombre: 'Amoxicilina 500mg', descripcion: 'Antibiótico de amplio espectro.', categoria: 'Antibiótico', precio: 12.00, stock: 50, fechaVencimiento: '2025-08-15', proveedorId: 2 },
+                        { id: 3, nombre: 'Vitamina C 1000mg', descripcion: 'Suplemento vitamínico.', categoria: 'Vitamina', precio: 8.75, stock: 75, fechaVencimiento: '2027-01-20', proveedorId: 3 },
+                        { id: 4, nombre: 'Ibuprofeno 400mg', descripcion: 'Antiinflamatorio no esteroideo.', categoria: 'Antiinflamatorio', precio: 7.20, stock: 80, fechaVencimiento: '2026-06-01', proveedorId: 1 },
+                        { id: 5, nombre: 'Omeprazol 20mg', descripcion: 'Inhibidor de la bomba de protones.', categoria: 'Gastrointestinal', precio: 18.90, stock: 60, fechaVencimiento: '2025-11-01', proveedorId: 2 },
+                    ];
+                    for (const med of initialMedicamentos) {
+                        await addDoc(medicamentosColRef, med);
+                    }
+                }
+
+                // Check and populate Proveedores
+                const proveedoresColRef = collection(db, `artifacts/${appId}/public/data/proveedores`);
+                const proveedoresSnapshot = await getDocs(proveedoresColRef);
+                if (proveedoresSnapshot.empty) {
+                    console.log("Proveedores collection is empty. Populating with initial data...");
+                    const initialProveedores = [
+                        { id: 1, nombre: 'Farmaceútica Global S.A.' },
+                        { id: 2, nombre: 'Distribuidora Pharma Peru' },
+                        { id: 3, nombre: 'Laboratorios Vida' },
+                    ];
+                    for (const prov of initialProveedores) {
+                        await addDoc(proveedoresColRef, prov);
+                    }
+                }
+                
+                // Fetch initial data into local arrays and set up real-time listeners
+                await fetchMedicamentos();
+                await fetchProveedores();
+                // We'll keep the `usuarios` array in-memory for the login logic as it's static in this simulation.
+                // Transactions will be fetched on demand or through a dedicated listener if a view for them exists.
+
+            } catch (error) {
+                console.error("Error initializing Firestore data:", error);
+                showMessage('login-message', 'Error al cargar datos iniciales. Verifique la consola.', true);
+            }
+        }
+
+        // --- Real-time Data Fetching with onSnapshot ---
+        async function fetchMedicamentos() {
+            const medicamentosColRef = collection(db, `artifacts/${appId}/public/data/medicamentos`);
+            onSnapshot(medicamentosColRef, (snapshot) => {
+                medicamentos = snapshot.docs.map(doc => ({ ...doc.data(), firestoreId: doc.id }));
+                // Determine nextMedicamentoId from fetched data
+                nextMedicamentoId = medicamentos.reduce((maxId, med) => Math.max(maxId, med.id), 0) + 1;
+                console.log("[Firestore] Medicamentos actualizados:", medicamentos);
+                // Re-render any visible medicine tables if they are active
+                if (!document.getElementById('all-medicines-section').classList.contains('hidden')) {
+                    displayAllMedicines();
+                }
+                if (!document.getElementById('low-stock-report-section').classList.contains('hidden')) {
+                    generateLowStockReport();
+                }
+                if (!document.getElementById('expiring-report-section').classList.contains('hidden')) {
+                    generateExpiringReport();
+                }
+            }, (error) => {
+                console.error("Error fetching medicamentos:", error);
+                showMessage('all-medicines-message', 'Error al cargar medicamentos.', true);
+            });
+        }
+
+        async function fetchProveedores() {
+            const proveedoresColRef = collection(db, `artifacts/${appId}/public/data/proveedores`);
+            onSnapshot(proveedoresColRef, (snapshot) => {
+                proveedores = snapshot.docs.map(doc => ({ ...doc.data(), firestoreId: doc.id }));
+                console.log("[Firestore] Proveedores actualizados:", proveedores);
+                populateSuppliersSelect('reg-supplier');
+                populateSuppliersSelect('upd-supplier');
+            }, (error) => {
+                console.error("Error fetching proveedores:", error);
+                showMessage('register-medicine-message', 'Error al cargar proveedores.', true);
+            });
+        }
+
+        // --- Utility Functions ---
+        /**
+         * Muestra un mensaje en un elemento de la interfaz de usuario.
+         * El mensaje desaparecerá después de 10 segundos.
+         * @param {string} elementId - El ID del elemento HTML donde se mostrará el mensaje.
+         * @param {string} message - El texto del mensaje.
+         * @param {boolean} [isError=false] - Si es true, el mensaje se mostrará como un error (estilo rojo).
+         */
+        function showMessage(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            if (!element) {
+                console.error(`Element with ID '${elementId}' not found.`);
+                return;
+            }
+            element.textContent = message;
+            element.className = `message-box ${isError ? 'error' : ''}`;
+            element.classList.remove('hidden');
+            console.log(`[Mensaje UI - ${isError ? 'ERROR' : 'INFO'}] ${elementId}: ${message}`); // Log para depuración
+            setTimeout(() => {
+                element.classList.add('hidden');
+            }, 10000); // Aumentado a 10 segundos
+        }
+
+        /**
+         * Oculta todas las secciones principales de la aplicación (login, dashboard, operaciones).
+         * También oculta todas las subsecciones dentro de la sección de operaciones.
+         */
+        function hideAllSections() {
+            console.log("[UI] Ocultando todas las secciones.");
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('operation-sections').classList.add('hidden');
+
+            // Asegúrate de que todas las subsecciones de operaciones también estén ocultas
+            document.querySelectorAll('#operation-sections > div').forEach(section => {
+                section.classList.add('hidden');
+            });
+        }
+
+        /**
+         * Muestra una sección específica y oculta las demás.
+         * @param {string} sectionId - El ID de la sección a mostrar.
+         */
+        function showSection(sectionId) {
+            hideAllSections();
+            console.log(`[UI] Mostrando sección: ${sectionId}`);
+            document.getElementById(sectionId).classList.remove('hidden');
+
+            // Si es una sección de operación, asegúrate de mostrar el contenedor de operaciones y el botón de volver
+            if (sectionId !== 'login-section' && sectionId !== 'dashboard-section') {
+                document.getElementById('operation-sections').classList.remove('hidden');
+                // Adicionalmente, si es una sección de operación, mostrar la sección específica
+                document.getElementById(sectionId).classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Limpia los campos de entrada de un formulario.
+         * @param {string[]} inputIds - Un array de IDs de los inputs a limpiar.
+         */
+        function clearFormInputs(inputIds) {
+            inputIds.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = '';
+                }
+            });
+        }
+
+        /**
+         * Popula un elemento <select> con opciones de proveedores.
+         * @param {string} selectId - El ID del elemento <select>.
+         */
+        function populateSuppliersSelect(selectId) {
+            const selectElement = document.getElementById(selectId);
+            if (!selectElement) return;
+
+            selectElement.innerHTML = '<option value="">Seleccione un Proveedor</option>'; // Opción por defecto
+            proveedores.forEach(supplier => {
+                const option = document.createElement('option');
+                option.value = supplier.id;
+                option.textContent = supplier.nombre;
+                selectElement.appendChild(option);
+            });
+        }
+
+        /**
+         * Genera una fila de tabla HTML para un medicamento.
+         * @param {object} medicine - El objeto medicamento.
+         * @returns {string} - La cadena HTML para la fila de la tabla.
+         */
+        function generateMedicineTableRow(medicine) {
+            const supplier = proveedores.find(p => p.id === medicine.proveedorId);
+            const supplierName = supplier ? supplier.nombre : 'Desconocido';
+            return `
+                <tr>
+                    <td class="table-cell text-left-align">${medicine.id}</td>
+                    <td class="table-cell text-left-align">${medicine.nombre}</td>
+                    <td class="table-cell text-left-align">${medicine.categoria}</td>
+                    <td class="table-cell text-right-align">S/ ${medicine.precio.toFixed(2)}</td>
+                    <td class="table-cell text-right-align">${medicine.stock}</td>
+                    <td class="table-cell text-left-align">${medicine.fechaVencimiento}</td>
+                    <td class="table-cell text-left-align">${supplierName}</td>
+                </tr>
+            `;
+        }
+
+        // --- Core Logic Functions ---
+
+        /**
+         * Realiza el proceso de inicio de sesión.
+         */
+        async function login() {
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+            const loginMessage = document.getElementById('login-message');
+
+            const user = usuarios.find(u => u.username === usernameInput && u.password === passwordInput);
+
+            if (user) {
+                loggedInUser = auth.currentUser; // Use the actual Firebase authenticated user
+                userRole = user.rol; // Set the role based on our mock users
+                showMessage('login-message', `¡Bienvenido, ${userRole}!`, false);
+                document.getElementById('logged-in-role-display').textContent = userRole;
+                setTimeout(() => {
+                    showDashboard(userRole);
+                    clearFormInputs(['username', 'password']);
+                }, 1500); // Pequeña demora para que el mensaje se vea
+            } else {
+                showMessage('login-message', 'Usuario o contraseña incorrectos.', true);
+                loggedInUser = null;
+                userRole = null;
+            }
+            console.log(`[Auth] Intento de login para: ${usernameInput}. Éxito: ${!!user}`);
+        }
+
+        /**
+         * Muestra el dashboard y ajusta la visibilidad de los botones según el rol.
+         * @param {string} role - El rol del usuario logueado ('Administrador' o 'Farmaceutico').
+         */
+        function showDashboard(role) {
+            showSection('dashboard-section');
+            console.log(`[Dashboard] Mostrando dashboard para rol: ${role}`);
+
+            // Ocultar/mostrar botones específicos del administrador
+            document.querySelectorAll('[data-role="Administrador"]').forEach(button => {
+                if (role === 'Administrador') {
+                    button.classList.remove('hidden');
+                } else {
+                    button.classList.add('hidden');
+                }
+            });
+        }
+
+        /**
+         * Cierra la sesión del usuario.
+         */
+        async function logout() {
+            try {
+                await signOut(auth);
+                console.log("[Auth] Sesión cerrada.");
+                showMessage('login-message', 'Sesión cerrada exitosamente.', false);
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                showMessage('login-message', 'Error al cerrar sesión.', true);
+            }
+        }
+
+        /**
+         * Registra un nuevo medicamento en el inventario.
+         */
+        async function registerMedicine() {
+            const name = document.getElementById('reg-name').value.trim();
+            const category = document.getElementById('reg-category').value.trim();
+            const price = parseFloat(document.getElementById('reg-price').value);
+            const stock = parseInt(document.getElementById('reg-stock').value);
+            const expiry = document.getElementById('reg-expiry').value;
+            const description = document.getElementById('reg-description').value.trim();
+            const supplierId = parseInt(document.getElementById('reg-supplier').value);
+            const messageElement = 'register-medicine-message';
+
+            if (!name || !category || isNaN(price) || isNaN(stock) || stock < 0 || !expiry || !description || isNaN(supplierId)) {
+                showMessage(messageElement, 'Por favor, complete todos los campos correctamente.', true);
+                return;
+            }
+            if (price <= 0) {
+                showMessage(messageElement, 'El precio debe ser un valor positivo.', true);
+                return;
+            }
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const expiryDate = new Date(expiry + 'T00:00:00');
+            if (expiryDate < today) {
+                showMessage(messageElement, 'La fecha de vencimiento no puede ser en el pasado.', true);
+                return;
+            }
+            if (!proveedores.some(p => p.id === supplierId)) {
+                showMessage(messageElement, 'Proveedor seleccionado no es válido.', true);
+                return;
+            }
+
+            try {
+                const medicamentosColRef = collection(db, `artifacts/${appId}/public/data/medicamentos`);
+                const newMedicineData = {
+                    id: nextMedicamentoId, // Use the locally managed ID for the 'id' field
+                    nombre: name,
+                    descripcion: description,
+                    categoria: category,
+                    precio: price,
+                    stock: stock,
+                    fechaVencimiento: expiry,
+                    proveedorId: supplierId
+                };
+                await addDoc(medicamentosColRef, newMedicineData);
+                
+                await addDoc(collection(db, `artifacts/${appId}/public/data/transacciones`), {
+                    medicamentoId: newMedicineData.id,
+                    tipo: 'Registro',
+                    cantidad: stock,
+                    fecha: new Date().toISOString().split('T')[0],
+                    observaciones: 'Stock inicial',
+                    userId: userId // Track who made the transaction
+                });
+
+                showMessage(messageElement, `Medicamento "${name}" registrado con ID: ${newMedicineData.id}`, false);
+                clearFormInputs(['reg-name', 'reg-category', 'reg-price', 'reg-stock', 'reg-expiry', 'reg-description']);
+                document.getElementById('reg-supplier').value = "";
+                console.log("[Firestore] Nuevo medicamento registrado:", newMedicineData);
+            } catch (error) {
+                console.error("Error al registrar medicamento:", error);
+                showMessage(messageElement, 'Error al registrar medicamento.', true);
+            }
+        }
+
+        /**
+         * Busca un medicamento por ID para la sección de actualización y rellena los campos.
+         */
+        async function searchMedicineForUpdate() {
+            const medicineId = parseInt(document.getElementById('upd-id').value);
+            const messageElement = 'update-medicine-message';
+            const updateFieldsDiv = document.getElementById('update-fields');
+            const submitUpdateButton = document.getElementById('submit-update-medicine');
+
+            updateFieldsDiv.classList.add('hidden');
+            submitUpdateButton.classList.add('hidden');
+
+            if (isNaN(medicineId)) {
+                showMessage(messageElement, 'Por favor, ingrese un ID de medicamento válido.', true);
+                return;
+            }
+
+            try {
+                const medicine = medicamentos.find(m => m.id === medicineId);
+                if (medicine) {
+                    document.getElementById('upd-name').value = medicine.nombre;
+                    document.getElementById('upd-category').value = medicine.categoria;
+                    document.getElementById('upd-price').value = medicine.precio;
+                    document.getElementById('upd-expiry').value = medicine.fechaVencimiento;
+                    document.getElementById('upd-description').value = medicine.descripcion;
+                    document.getElementById('upd-supplier').value = medicine.proveedorId;
+
+                    updateFieldsDiv.classList.remove('hidden');
+                    submitUpdateButton.classList.remove('hidden');
+                    showMessage(messageElement, `Medicamento ID ${medicineId} encontrado. Actualice los campos necesarios.`, false);
+                    console.log("[Firestore] Medicamento encontrado para actualizar:", medicine);
+                } else {
+                    showMessage(messageElement, `No se encontró ningún medicamento con el ID ${medicineId}.`, true);
+                    clearFormInputs(['upd-name', 'upd-category', 'upd-price', 'upd-expiry', 'upd-description']);
+                    document.getElementById('upd-supplier').value = "";
+                }
+            } catch (error) {
+                console.error("Error al buscar medicamento para actualizar:", error);
+                showMessage(messageElement, 'Error al buscar medicamento.', true);
+            }
+        }
+
+        /**
+         * Actualiza la información de un medicamento existente.
+         */
+        async function updateMedicine() {
+            const medicineId = parseInt(document.getElementById('upd-id').value);
+            const name = document.getElementById('upd-name').value.trim();
+            const category = document.getElementById('upd-category').value.trim();
+            const price = parseFloat(document.getElementById('upd-price').value);
+            const expiry = document.getElementById('upd-expiry').value;
+            const description = document.getElementById('upd-description').value.trim();
+            const supplierId = parseInt(document.getElementById('upd-supplier').value);
+            const messageElement = 'update-medicine-message';
+
+            if (isNaN(medicineId) || !name || !category || isNaN(price) || !expiry || !description || isNaN(supplierId)) {
+                showMessage(messageElement, 'Por favor, complete todos los campos y busque un medicamento primero.', true);
+                return;
+            }
+            if (price <= 0) {
+                showMessage(messageElement, 'El precio debe ser un valor positivo.', true);
+                return;
+            }
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const expiryDate = new Date(expiry + 'T00:00:00');
+            if (expiryDate < today) {
+                showMessage(messageElement, 'La fecha de vencimiento no puede ser en el pasado.', true);
+                return;
+            }
+            if (!proveedores.some(p => p.id === supplierId)) {
+                showMessage(messageElement, 'Proveedor seleccionado no es válido.', true);
+                return;
+            }
+
+            try {
+                const medicineToUpdate = medicamentos.find(m => m.id === medicineId);
+                if (medicineToUpdate) {
+                    const docRef = doc(db, `artifacts/${appId}/public/data/medicamentos`, medicineToUpdate.firestoreId);
+                    await updateDoc(docRef, {
+                        nombre: name,
+                        categoria: category,
+                        precio: price,
+                        fechaVencimiento: expiry,
+                        descripcion: description,
+                        proveedorId: supplierId
+                    });
+
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/transacciones`), {
+                        medicamentoId: medicineId,
+                        tipo: 'Actualización',
+                        cantidad: 0,
+                        fecha: new Date().toISOString().split('T')[0],
+                        observaciones: 'Información de medicamento actualizada',
+                        userId: userId
+                    });
+
+                    showMessage(messageElement, `Medicamento ID ${medicineId} actualizado exitosamente.`, false);
+                    clearFormInputs(['upd-id', 'upd-name', 'upd-category', 'upd-price', 'upd-expiry', 'upd-description']);
+                    document.getElementById('upd-supplier').value = "";
+                    document.getElementById('update-fields').classList.add('hidden');
+                    document.getElementById('submit-update-medicine').classList.add('hidden');
+                    console.log("[Firestore] Medicamento actualizado:", medicineToUpdate);
+                } else {
+                    showMessage(messageElement, `Error: No se encontró el medicamento con ID ${medicineId}.`, true);
+                }
+            } catch (error) {
+                console.error("Error al actualizar medicamento:", error);
+                showMessage(messageElement, 'Error al actualizar medicamento.', true);
+            }
+        }
+
+        /**
+         * Elimina un medicamento (lógicamente, stock a 0).
+         */
+        async function deleteMedicine() {
+            const medicineId = parseInt(document.getElementById('del-id').value);
+            const messageElement = 'delete-medicine-message';
+
+            if (isNaN(medicineId)) {
+                showMessage(messageElement, 'Por favor, ingrese un ID de medicamento válido.', true);
+                return;
+            }
+
+            try {
+                const medicineToDelete = medicamentos.find(m => m.id === medicineId);
+                if (medicineToDelete) {
+                    const docRef = doc(db, `artifacts/${appId}/public/data/medicamentos`, medicineToDelete.firestoreId);
+                    
+                    const originalStock = medicineToDelete.stock;
+                    if (originalStock > 0) {
+                        await updateDoc(docRef, { stock: 0 }); // Logical delete by setting stock to 0
+
+                        await addDoc(collection(db, `artifacts/${appId}/public/data/transacciones`), {
+                            medicamentoId: medicineId,
+                            tipo: 'Eliminación Lógica',
+                            cantidad: -originalStock,
+                            fecha: new Date().toISOString().split('T')[0],
+                            observaciones: 'Medicamento marcado como eliminado (stock a 0)',
+                            userId: userId
+                        });
+                        showMessage(messageElement, `Medicamento ID ${medicineId} marcado como eliminado (stock a 0).`, false);
+                        console.log("[Firestore] Medicamento eliminado lógicamente:", medicineToDelete);
+                    } else {
+                        showMessage(messageElement, `El medicamento ID ${medicineId} ya tiene stock 0.`, true);
+                    }
+                } else {
+                    showMessage(messageElement, `No se encontró ningún medicamento con el ID ${medicineId}.`, true);
+                }
+                clearFormInputs(['del-id']);
+            } catch (error) {
+                console.error("Error al eliminar medicamento:", error);
+                showMessage(messageElement, 'Error al eliminar medicamento.', true);
+            }
+        }
+
+        /**
+         * Registra una compra de medicamentos.
+         */
+        async function purchaseMedicine() {
+            const medicineId = parseInt(document.getElementById('purchase-id').value);
+            const quantity = parseInt(document.getElementById('purchase-quantity').value);
+            const messageElement = 'purchase-medicine-message';
+
+            if (isNaN(medicineId) || isNaN(quantity) || quantity <= 0) {
+                showMessage(messageElement, 'Por favor, ingrese un ID de medicamento y una cantidad válida (mayor que 0).', true);
+                return;
+            }
+
+            try {
+                const medicineToUpdate = medicamentos.find(m => m.id === medicineId);
+                if (medicineToUpdate) {
+                    const docRef = doc(db, `artifacts/${appId}/public/data/medicamentos`, medicineToUpdate.firestoreId);
+                    await updateDoc(docRef, { stock: medicineToUpdate.stock + quantity });
+
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/transacciones`), {
+                        medicamentoId: medicineId,
+                        tipo: 'Compra',
+                        cantidad: quantity,
+                        fecha: new Date().toISOString().split('T')[0],
+                        observaciones: `Compra de ${quantity} unidades`,
+                        userId: userId
+                    });
+
+                    showMessage(messageElement, `Se compraron ${quantity} unidades de "${medicineToUpdate.nombre}". Nuevo stock: ${medicineToUpdate.stock + quantity}`, false);
+                    clearFormInputs(['purchase-id', 'purchase-quantity']);
+                    console.log(`[Firestore] Compra registrada para ID ${medicineId}. Nuevo stock: ${medicineToUpdate.stock + quantity}`);
+                } else {
+                    showMessage(messageElement, `No se encontró ningún medicamento con el ID ${medicineId}.`, true);
+                }
+            } catch (error) {
+                console.error("Error al registrar compra:", error);
+                showMessage(messageElement, 'Error al registrar compra.', true);
+            }
+        }
+
+        /**
+         * Registra una venta de medicamentos.
+         */
+        async function sellMedicine() {
+            const medicineId = parseInt(document.getElementById('sell-id').value);
+            const quantity = parseInt(document.getElementById('sell-quantity').value);
+            const messageElement = 'sell-medicine-message';
+
+            if (isNaN(medicineId) || isNaN(quantity) || quantity <= 0) {
+                showMessage(messageElement, 'Por favor, ingrese un ID de medicamento y una cantidad válida (mayor que 0).', true);
+                return;
+            }
+
+            try {
+                const medicineToUpdate = medicamentos.find(m => m.id === medicineId);
+                if (medicineToUpdate) {
+                    if (medicineToUpdate.stock >= quantity) {
+                        const docRef = doc(db, `artifacts/${appId}/public/data/medicamentos`, medicineToUpdate.firestoreId);
+                        await updateDoc(docRef, { stock: medicineToUpdate.stock - quantity });
+
+                        await addDoc(collection(db, `artifacts/${appId}/public/data/transacciones`), {
+                            medicamentoId: medicineId,
+                            tipo: 'Venta',
+                            cantidad: -quantity, // Cantidad negativa para indicar salida
+                            fecha: new Date().toISOString().split('T')[0],
+                            observaciones: `Venta de ${quantity} unidades`,
+                            userId: userId
+                        });
+
+                        showMessage(messageElement, `Se vendieron ${quantity} unidades de "${medicineToUpdate.nombre}". Nuevo stock: ${medicineToUpdate.stock - quantity}`, false);
+                        clearFormInputs(['sell-id', 'sell-quantity']);
+                        console.log(`[Firestore] Venta registrada para ID ${medicineId}. Nuevo stock: ${medicineToUpdate.stock - quantity}`);
+                    } else {
+                        showMessage(messageElement, `No hay suficiente stock para vender ${quantity} unidades de "${medicineToUpdate.nombre}". Stock actual: ${medicineToUpdate.stock}`, true);
+                    }
+                } else {
+                    showMessage(messageElement, `No se encontró ningún medicamento con el ID ${medicineId}.`, true);
+                }
+            } catch (error) {
+                console.error("Error al registrar venta:", error);
+                showMessage(messageElement, 'Error al registrar venta.', true);
+            }
+        }
+
+        /**
+         * Ajusta el stock de un medicamento por vencimiento o pérdida.
+         */
+        async function adjustStock() {
+            const medicineId = parseInt(document.getElementById('adjust-id').value);
+            const quantity = parseInt(document.getElementById('adjust-quantity').value); // Puede ser positivo o negativo
+            const observations = document.getElementById('adjust-observations').value.trim();
+            const messageElement = 'adjust-stock-message';
+
+            if (isNaN(medicineId) || isNaN(quantity) || !observations) {
+                showMessage(messageElement, 'Por favor, ingrese un ID de medicamento, una cantidad y observaciones.', true);
+                return;
+            }
+
+            try {
+                const medicineToUpdate = medicamentos.find(m => m.id === medicineId);
+                if (medicineToUpdate) {
+                    // Verificar si el ajuste negativo excedería el stock
+                    if (quantity < 0 && medicineToUpdate.stock + quantity < 0) {
+                        showMessage(messageElement, `No se puede ajustar el stock a un valor negativo. Stock actual: ${medicineToUpdate.stock}, Intento de ajuste: ${quantity}.`, true);
+                        return;
+                    }
+
+                    const docRef = doc(db, `artifacts/${appId}/public/data/medicamentos`, medicineToUpdate.firestoreId);
+                    await updateDoc(docRef, { stock: medicineToUpdate.stock + quantity });
+
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/transacciones`), {
+                        medicamentoId: medicineId,
+                        tipo: 'Ajuste',
+                        cantidad: quantity,
+                        fecha: new Date().toISOString().split('T')[0],
+                        observaciones: observations,
+                        userId: userId
+                    });
+
+                    showMessage(messageElement, `Stock de "${medicineToUpdate.nombre}" ajustado en ${quantity} unidades. Nuevo stock: ${medicineToUpdate.stock + quantity}`, false);
+                    clearFormInputs(['adjust-id', 'adjust-quantity', 'adjust-observations']);
+                    console.log(`[Firestore] Ajuste de stock para ID ${medicineId}. Nuevo stock: ${medicineToUpdate.stock + quantity}`);
+                } else {
+                    showMessage(messageElement, `No se encontró ningún medicamento con el ID ${medicineId}.`, true);
+                }
+            } catch (error) {
+                console.error("Error al ajustar stock:", error);
+                showMessage(messageElement, 'Error al ajustar stock.', true);
+            }
+        }
+
+        /**
+         * Consulta y muestra el stock actual de un medicamento.
+         */
+        async function checkStock() {
+            const medicineId = parseInt(document.getElementById('check-id').value);
+            const messageElement = 'check-stock-message';
+            const resultElement = document.getElementById('check-stock-result');
+
+            resultElement.classList.add('hidden'); // Ocultar resultados anteriores
+
+            if (isNaN(medicineId)) {
+                showMessage(messageElement, 'Por favor, ingrese un ID de medicamento válido.', true);
+                return;
+            }
+
+            try {
+                const medicine = medicamentos.find(m => m.id === medicineId);
+                if (medicine) {
+                    resultElement.textContent = `Medicamento: "${medicine.nombre}", Stock actual: ${medicine.stock} unidades.`;
+                    resultElement.classList.remove('hidden');
+                    resultElement.classList.remove('error'); // Asegurarse de que no tenga estilo de error
+                    resultElement.style.backgroundColor = '#e0f2f7'; // Reset to info background
+                    resultElement.style.color = '#01579b'; // Reset to info color
+                    showMessage(messageElement, '', false); // Clear previous message
+                    console.log(`[Firestore] Consulta de stock para ID ${medicineId}: ${medicine.stock}`);
+                } else {
+                    showMessage(messageElement, `No se encontró ningún medicamento con el ID ${medicineId}.`, true);
+                    resultElement.classList.add('hidden');
+                }
+                clearFormInputs(['check-id']);
+            } catch (error) {
+                console.error("Error al consultar stock:", error);
+                showMessage(messageElement, 'Error al consultar stock.', true);
+            }
+        }
+
+        /**
+         * Muestra todos los medicamentos en una tabla.
+         */
+        function displayAllMedicines() {
+            const tbody = document.getElementById('all-medicines-tbody');
+            tbody.innerHTML = ''; // Limpiar tabla
+            const messageElement = 'all-medicines-message';
+
+            if (medicamentos.length === 0) {
+                showMessage(messageElement, 'No hay medicamentos registrados en el inventario.', false);
+                return;
+            }
+
+            medicamentos.forEach(medicine => {
+                tbody.innerHTML += generateMedicineTableRow(medicine);
+            });
+            showMessage(messageElement, '', false); // Clear any previous message
+            console.log("[Reporte] Mostrando todos los medicamentos.");
+        }
+
+        /**
+         * Genera y muestra un reporte de medicamentos con bajo stock.
+         */
+        function generateLowStockReport() {
+            const threshold = parseInt(document.getElementById('low-stock-threshold').value);
+            const tbody = document.getElementById('low-stock-tbody');
+            tbody.innerHTML = '';
+            const messageElement = 'low-stock-message';
+
+            if (isNaN(threshold) || threshold < 0) {
+                showMessage(messageElement, 'Por favor, ingrese un umbral de stock bajo válido (número positivo o cero).', true);
+                return;
+            }
+
+            const lowStockMedicines = medicamentos.filter(m => m.stock <= threshold && m.stock > 0); // Considera solo activos y con stock > 0
+            if (lowStockMedicines.length === 0) {
+                showMessage(messageElement, `No hay medicamentos con stock igual o menor a ${threshold} unidades.`, false);
+                return;
+            }
+
+            lowStockMedicines.forEach(medicine => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="table-cell text-left-align">${medicine.id}</td>
+                        <td class="table-cell text-left-align">${medicine.nombre}</td>
+                        <td class="table-cell text-left-align">${medicine.categoria}</td>
+                        <td class="table-cell text-right-align">${medicine.stock}</td>
+                        <td class="table-cell text-left-align">${medicine.fechaVencimiento}</td>
+                    </tr>
+                `;
+            });
+            showMessage(messageElement, '', false); // Clear any previous message
+            console.log(`[Reporte] Reporte de bajo stock generado para umbral: ${threshold}`);
+        }
+
+        /**
+         * Genera y muestra un reporte de medicamentos por vencer.
+         */
+        function generateExpiringReport() {
+            const daysAhead = parseInt(document.getElementById('expiring-days').value);
+            const tbody = document.getElementById('expiring-tbody');
+            tbody.innerHTML = '';
+            const messageElement = 'expiring-message';
+
+            if (isNaN(daysAhead) || daysAhead < 0) {
+                showMessage(messageElement, 'Por favor, ingrese un número de días de anticipación válido (positivo o cero).', true);
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset time for accurate date comparison
+
+            const expiringMedicines = medicamentos.filter(m => {
+                const expiryDate = new Date(m.fechaVencimiento + 'T00:00:00'); // Ensure date comparison
+                const diffTime = expiryDate.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Calculate difference in days
+
+                return diffDays > 0 && diffDays <= daysAhead && m.stock > 0; // Check for positive days (future) and within threshold, and has stock
+            });
+
+            if (expiringMedicines.length === 0) {
+                showMessage(messageElement, `No hay medicamentos que venzan en los próximos ${daysAhead} días.`, false);
+                return;
+            }
+
+            expiringMedicines.sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento)); // Sort by expiry date
+
+            expiringMedicines.forEach(medicine => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="table-cell text-left-align">${medicine.id}</td>
+                        <td class="table-cell text-left-align">${medicine.nombre}</td>
+                        <td class="table-cell text-left-align">${medicine.categoria}</td>
+                        <td class="table-cell text-right-align">${medicine.stock}</td>
+                        <td class="table-cell text-left-align">${medicine.fechaVencimiento}</td>
+                    </tr>
+                `;
+            });
+            showMessage(messageElement, '', false); // Clear any previous message
+            console.log(`[Reporte] Reporte de vencimiento generado para ${daysAhead} días.`);
+        }
+
+        // --- Event Listeners Setup (called after Firebase Init) ---
+        function setupEventListeners() {
+            // Populate supplier dropdowns initially (will be updated by onSnapshot)
+            populateSuppliersSelect('reg-supplier');
+            populateSuppliersSelect('upd-supplier');
+
+            // Login
+            document.getElementById('login-btn').addEventListener('click', login);
+            document.getElementById('password').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    login();
+                }
+            });
+
+            // Logout
+            document.getElementById('logout-btn').addEventListener('click', logout);
+
+            // Back to Dashboard button
+            document.getElementById('back-to-dashboard-btn').addEventListener('click', () => {
+                showDashboard(userRole); // Use the stored userRole
+            });
+
+            // Dashboard navigation buttons
+            document.getElementById('show-register-medicine').addEventListener('click', () => {
+                showSection('register-medicine-section');
+                clearFormInputs(['reg-name', 'reg-category', 'reg-price', 'reg-stock', 'reg-expiry', 'reg-description']);
+                document.getElementById('reg-supplier').value = ""; // Reset supplier
+                showMessage('register-medicine-message', '', false);
+            });
+            document.getElementById('show-update-medicine').addEventListener('click', () => {
+                showSection('update-medicine-section');
+                clearFormInputs(['upd-id', 'upd-name', 'upd-category', 'upd-price', 'upd-expiry', 'upd-description']);
+                document.getElementById('upd-supplier').value = ""; // Reset supplier
+                document.getElementById('update-fields').classList.add('hidden');
+                document.getElementById('submit-update-medicine').classList.add('hidden');
+                showMessage('update-medicine-message', '', false);
+            });
+            document.getElementById('show-delete-medicine').addEventListener('click', () => {
+                showSection('delete-medicine-section');
+                clearFormInputs(['del-id']);
+                showMessage('delete-medicine-message', '', false);
+            });
+            document.getElementById('show-purchase-medicine').addEventListener('click', () => {
+                showSection('purchase-medicine-section');
+                clearFormInputs(['purchase-id', 'purchase-quantity']);
+                showMessage('purchase-medicine-message', '', false);
+            });
+            document.getElementById('show-sell-medicine').addEventListener('click', () => {
+                showSection('sell-medicine-section');
+                clearFormInputs(['sell-id', 'sell-quantity']);
+                showMessage('sell-medicine-message', '', false);
+            });
+            document.getElementById('show-adjust-stock').addEventListener('click', () => {
+                showSection('adjust-stock-section');
+                clearFormInputs(['adjust-id', 'adjust-quantity', 'adjust-observations']);
+                showMessage('adjust-stock-message', '', false);
+            });
+            document.getElementById('show-check-stock').addEventListener('click', () => {
+                showSection('check-stock-section');
+                clearFormInputs(['check-id']);
+                document.getElementById('check-stock-result').classList.add('hidden');
+                showMessage('check-stock-message', '', false);
+            });
+            document.getElementById('show-all-medicines').addEventListener('click', () => {
+                showSection('all-medicines-section');
+                displayAllMedicines();
+                showMessage('all-medicines-message', '', false);
+            });
+            document.getElementById('show-low-stock-report').addEventListener('click', () => {
+                showSection('low-stock-report-section');
+                document.getElementById('low-stock-tbody').innerHTML = ''; // Clear previous report
+                showMessage('low-stock-message', '', false);
+                generateLowStockReport(); // Generate report when entering
+            });
+            document.getElementById('show-expiring-report').addEventListener('click', () => {
+                showSection('expiring-report-section');
+                document.getElementById('expiring-tbody').innerHTML = ''; // Clear previous report
+                showMessage('expiring-message', '', false);
+                generateExpiringReport(); // Generate report when entering
+            });
+
+            // Operation specific buttons
+            document.getElementById('submit-register-medicine').addEventListener('click', registerMedicine);
+            document.getElementById('search-medicine-for-update').addEventListener('click', searchMedicineForUpdate);
+            document.getElementById('submit-update-medicine').addEventListener('click', updateMedicine);
+            document.getElementById('submit-delete-medicine').addEventListener('click', deleteMedicine);
+            document.getElementById('submit-purchase-medicine').addEventListener('click', purchaseMedicine);
+            document.getElementById('submit-sell-medicine').addEventListener('click', sellMedicine);
+            document.getElementById('submit-adjust-stock').addEventListener('click', adjustStock);
+            document.getElementById('submit-check-stock').addEventListener('click', checkStock);
+            document.getElementById('generate-low-stock-report').addEventListener('click', generateLowStockReport);
+            document.getElementById('generate-expiring-report').addEventListener('click', generateExpiringReport);
+        }
+    </script>
+</body>
+</html>
